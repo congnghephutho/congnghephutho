@@ -17,13 +17,16 @@ jobs:
         run: npm install -g yarn
       - name: Report yarn version
         run: yarn --version
-      - name: Install
+      - name: Install dependencies
         if: steps.node_modules_cache.outputs.cache-hit != 'true'
         run: yarn install -W --frozen-lockfile
       - name: Build
         run: |
           yarn build:docs:domain
-          yarn build:functions
+          yarn build:frontend:admin:alpha
+          yarn build:functions:alpha
+          yarn build:serverside:batch:alpha
+          yarn build:serverside:slackbot:alpha
       - name: Deploy
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
@@ -32,7 +35,10 @@ jobs:
           echo $GCP_SERVICE_KEY | gcloud auth activate-service-account --key-file -
           gcloud auth configure-docker --quiet
           yarn firebase use alpha
+          yarn deploy:hosting:alpha
           yarn deploy:functions:alpha
+          yarn deploy:serverside:batch:alpha
+          yarn deploy:serverside:slackbot:alpha
       - uses: 8398a7/action-slack@v3
         if: always()
         with:
