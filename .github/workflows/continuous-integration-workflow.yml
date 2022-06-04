@@ -3,12 +3,12 @@ name: CI-GoodFeedback-Alpha
 on:
   push:
     branches:
-      - 'feature/145'
+      - 'main'
       - 'release/**'
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - 'feature/145'
+      - 'main'
       - 'release/**'
 jobs:
   sonarcloud:
