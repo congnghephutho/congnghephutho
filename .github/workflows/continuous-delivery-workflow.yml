@@ -6,7 +6,7 @@ on:
       - 'main'
 
 jobs:
-  deploy-alpha:
+  firebase-hosting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,9 +24,6 @@ jobs:
         run: |
           yarn build:docs:domain
           yarn build:frontend:admin:alpha
-          yarn build:functions:alpha
-          yarn build:serverside:batch:alpha
-          yarn build:serverside:slackbot:alpha
       - name: Deploy
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
@@ -36,8 +33,110 @@ jobs:
           gcloud auth configure-docker --quiet
           yarn firebase use alpha
           yarn deploy:hosting:alpha
+      - uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  firebase-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Install yarn
+        run: npm install -g yarn
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        if: steps.node_modules_cache.outputs.cache-hit != 'true'
+        run: yarn install -W --frozen-lockfile
+      - name: Build
+        run: |
+          yarn build:docs:domain
+          yarn build:functions:alpha
+      - name: Deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GCP_SERVICE_KEY: ${{ secrets.GCP_SERVICE_KEY }}
+        run: |
+          echo $GCP_SERVICE_KEY | gcloud auth activate-service-account --key-file -
+          gcloud auth configure-docker --quiet
+          yarn firebase use alpha
           yarn deploy:functions:alpha
+      - uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  batch-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Install yarn
+        run: npm install -g yarn
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        if: steps.node_modules_cache.outputs.cache-hit != 'true'
+        run: yarn install -W --frozen-lockfile
+      - name: Build
+        run: |
+          yarn build:docs:domain
+          yarn build:serverside:batch:alpha
+      - name: Deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GCP_SERVICE_KEY: ${{ secrets.GCP_SERVICE_KEY }}
+        run: |
+          echo $GCP_SERVICE_KEY | gcloud auth activate-service-account --key-file -
+          gcloud auth configure-docker --quiet
+          yarn firebase use alpha
           yarn deploy:serverside:batch:alpha
+      - uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  slackbot-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Install yarn
+        run: npm install -g yarn
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        if: steps.node_modules_cache.outputs.cache-hit != 'true'
+        run: yarn install -W --frozen-lockfile
+      - name: Build
+        run: |
+          yarn build:docs:domain
+          yarn build:serverside:slackbot:alpha
+      - name: Deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GCP_SERVICE_KEY: ${{ secrets.GCP_SERVICE_KEY }}
+        run: |
+          echo $GCP_SERVICE_KEY | gcloud auth activate-service-account --key-file -
+          gcloud auth configure-docker --quiet
+          yarn firebase use alpha
           yarn deploy:serverside:slackbot:alpha
       - uses: 8398a7/action-slack@v3
         if: always()
