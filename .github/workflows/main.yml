@@ -1,20 +1,127 @@
-name: Build
+name: CI-GoodFeedback
+
 on:
   push:
     branches:
-      - main
+      - 'main'
   pull_request:
     types: [opened, synchronize, reopened]
+    branches:
+      - 'main'
 jobs:
   sonarcloud:
-    name: SonarCloud
+      name: SonarCloud
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+        - name: SonarCloud Scan
+          uses: SonarSource/sonarcloud-github-action@master
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  firebase-hosting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+          node-version: 12
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: |
+          yarn install -W
+      - name: Test
+        run: yarn test:frontend:admin
+      - name: Build
+        run: |
+          yarn build:frontend:admin:alpha
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{  secrets.SONAR_TOKEN  }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  firebase-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: |
+          yarn install -W
+      - name: Test
+        run: yarn test:functions
+      - name: Build
+        run: |
+          yarn build:functions
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{  secrets.SONAR_TOKEN  }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  batch-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: |
+          yarn install -W
+      - name: Test
+        run: yarn test:serverside:batch
+      - name: Build
+        run: |
+          yarn build:serverside:batch:alpha
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{  secrets.SONAR_TOKEN  }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  slackbot-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Report yarn version
+        run: yarn --version
+      - name: Install dependencies
+        run: |
+          yarn install -W
+      - name: Test
+        run: yarn test:serverside:slackbot
+      - name: Build
+        run: |
+          yarn build:serverside:slackbot:alpha
+      - uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          fields: repo,author,message,workflow,took
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{  secrets.SONAR_TOKEN  }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
