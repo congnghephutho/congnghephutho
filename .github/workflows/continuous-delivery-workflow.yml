@@ -1,11 +1,12 @@
 name: CD-GoodFeedback
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - 'main'
 
 jobs:
-  deploy-prod:
+  deploy-alpha:
     if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     steps:
